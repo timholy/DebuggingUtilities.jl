@@ -166,4 +166,8 @@ function time_showline(filename)
     println("done")
 end
 
+function __init__()
+    showlnio[] = STDOUT
+end
+
 end # module
