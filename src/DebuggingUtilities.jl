@@ -4,13 +4,14 @@ module DebuggingUtilities
 
 using Compat
 
-export @showln, test_showline, time_showline
+export @showln, @showfl, test_showline, time_showline
 
 """
 DebuggingUtilities contains a few tools that may help debug julia code. The
 exported tools are:
 
 - `@showln`: a macro for displaying variables and corresponding function, file, and line number information
+- `@showfl`: a crude, but faster, version of `@showln`
 - `test_showline`: a function that displays progress as it executes a file
 - `time_showline`: a function that displays execution time for each expression in a file
 """
@@ -81,11 +82,7 @@ backtrace, and consequently is an indication of recursion depth.
 Line numbers are not typically correct on julia-0.4.
 """
 macro showln(exs...)
-    blk = Expr(:block)
-    for ex in exs
-        push!(blk.args, :(println(showlnio[], " "^indent, sprint(Base.show_unquoted,$(Expr(:quote, ex)),indent)*" = ", repr(begin value=$(esc(ex)) end))))
-    end
-    if !isempty(exs); push!(blk.args, :value); end
+    blk = showexprs(exs)
     quote
         local bt = backtrace()
         local indent = length(bt)  # to mark recursion
@@ -93,6 +90,28 @@ macro showln(exs...)
         print(showlnio[], " "^indent*"(")
         show_backtrace1(showlnio[], bt)
         println(showlnio[], ")")
+    end
+end
+
+function showexprs(exs)
+    blk = Expr(:block)
+    for ex in exs
+        push!(blk.args, :(println(showlnio[], " "^indent, sprint(Base.show_unquoted,$(Expr(:quote, ex)),indent)*" = ", repr(begin value=$(esc(ex)) end))))
+    end
+    if !isempty(exs); push!(blk.args, :value); end
+    blk
+end
+
+"""
+`@showfl(@__FILE__, @__LINE__, expressions...)` is similar to
+`@showln`, but has much less overhead (and is uglier to use).
+"""
+macro showfl(fl, ln, exs...)
+    blk = showexprs(exs)
+    quote
+        local indent = 0
+        $blk
+        println(showlnio[], "(at file ", $fl, ", line ", $ln, ')')
     end
 end
 
