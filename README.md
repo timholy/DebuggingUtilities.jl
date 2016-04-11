@@ -21,6 +21,8 @@ statement was executed. This can be useful when variables change value
 in the course of a single function. For example:
 
 ```jl
+using DebuggingUtilities
+
 function foo()
     x = 5
     @showln x
@@ -29,12 +31,12 @@ function foo()
     nothing
 end
 ```
-might produce output like
+might, when called (`foo()`), produce output like
 ```
             x = 5
-            (in foo at ./error.jl:26 at /tmp/showln_test.jl:52)
+            (in foo at ./error.jl:26 at /tmp/showln_test.jl:5)
             x = 7
-            (in foo at ./error.jl:26 at /tmp/showln_test.jl:54)
+            (in foo at ./error.jl:26 at /tmp/showln_test.jl:7)
 ```
 Line numbers are not typically accurate on julia-0.4, but they are with julia-0.5.
 
