@@ -83,7 +83,7 @@ Line numbers are not typically correct on julia-0.4.
 """
 macro showln(exs...)
     blk = showexprs(exs)
-    quote
+    blk = quote
         local bt = backtrace()
         local indent = length(bt)  # to mark recursion
         $blk
@@ -91,6 +91,10 @@ macro showln(exs...)
         show_backtrace1(showlnio[], bt)
         println(showlnio[], ")")
     end
+    if !isempty(exs)
+        push!(blk.args, :value)
+    end
+    blk
 end
 
 function showexprs(exs)
@@ -98,7 +102,6 @@ function showexprs(exs)
     for ex in exs
         push!(blk.args, :(println(showlnio[], " "^indent, sprint(Base.show_unquoted,$(Expr(:quote, ex)),indent)*" = ", repr(begin value=$(esc(ex)) end))))
     end
-    if !isempty(exs); push!(blk.args, :value); end
     blk
 end
 
@@ -108,11 +111,15 @@ end
 """
 macro showfl(fl, ln, exs...)
     blk = showexprs(exs)
-    quote
+    blk = quote
         local indent = 0
         $blk
         println(showlnio[], "(at file ", $fl, ", line ", $ln, ')')
     end
+    if !isempty(exs)
+        push!(blk.args, :value)
+    end
+    blk
 end
 
 """

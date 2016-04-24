@@ -1,15 +1,11 @@
 using DebuggingUtilities
 using Base.Test
 
-io = IOBuffer()
-DebuggingUtilities.showlnio[] = io
-
 function foo()
     x = 5
     @showln x
     x = 7
     @showln x
-    nothing
 end
 
 # The more laborious approach, in case one needs speed
@@ -18,10 +14,12 @@ function foofl()
     @showfl(@__FILE__, @__LINE__, x)
     x = 7
     @showfl(@__FILE__, @__LINE__, x)
-    nothing
 end
 
-foo()
+io = IOBuffer()
+DebuggingUtilities.showlnio[] = io
+
+@test foo() == 7
 
 str = chomp(takebuf_string(io))
 target = ("x = 5", "(in foo at", "x = 7", "(in foo at")
@@ -32,7 +30,7 @@ end
 
 io = IOBuffer()
 DebuggingUtilities.showlnio[] = io
-foofl()
+@test foofl() == 7
 str = chomp(takebuf_string(io))
 target = ("x = 5", "(at file ", "x = 7", "(at file ")
 for (i,ln) in enumerate(split(str, '\n'))
