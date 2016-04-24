@@ -135,11 +135,11 @@ function test_showline(filename)
     while idx < length(str)
         ex, idx = parse(str, idx)
         try
-            println(idx, ": ", ex)
+            println(showlnio[], idx, ": ", ex)
         end
         eval(Main,ex)
     end
-    println("done")
+    println(showlnio[], "done")
 end
 
 """
@@ -166,11 +166,11 @@ function time_showline(filename)
     end
     perm = sortperm(t)
     for p in perm
-        print(pos[p], " ", t[p], ": ")
+        print(showlnio[], pos[p], " ", t[p], ": ")
         str = string(exprs[p])
-        println(split(str, '\n')[1])
+        println(showlnio[], split(str, '\n')[1])
     end
-    println("done")
+    println(showlnio[], "done")
 end
 
 function __init__()

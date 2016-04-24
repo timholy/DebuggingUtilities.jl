@@ -38,10 +38,12 @@ for (i,ln) in enumerate(split(str, '\n'))
     @test startswith(ln, target[i])
 end
 
-DebuggingUtilities.showlnio[] = STDOUT
-nothing
-
 # Just make sure these run
+io = IOBuffer()
+DebuggingUtilities.showlnio[] = io
 test_showline("noerror.jl")
 @test_throws DomainError test_showline("error.jl")
 time_showline("noerror.jl")
+
+DebuggingUtilities.showlnio[] = STDOUT
+nothing
