@@ -19,31 +19,39 @@ DebuggingUtilities
 
 ## @showln
 
-btvalid(lkup) = !isempty(lkup)
-btfrom_c(lkup) = lkup[length(lkup)-1]
+# look up an instruction pointer
 
 if VERSION < v"0.5.0-dev"
+    btvalid(lkup) = !isempty(lkup)
+    lookup(ip) = ccall(:jl_lookup_code_address, Any, (Ptr{Void}, Int32), ip, 0)
+    btfrom_c(lkup) = lkup[length(lkup)-1]
+    funcname(lkup) = lkup[1]
     function print_btinfo(io, lkup)
         funcname, file, line = lkup
         print(io, "in ", funcname, " at ", file, ", line ", line)
     end
-else
-    function print_btinfo(io, lkup)
-        funcname = lkup[1]
-        print(io, "in ", funcname)
-        for i = 2:2:length(lkup)-3
-            print(io, " at ", lkup[i], ":", lkup[i+1])
+    function show_backtrace1(io, bt)
+        for t in bt
+            lkup = lookup(t)
+            if btvalid(lkup) && !btfrom_c(lkup)
+                funname = funcname(lkup)
+                if funname != :backtrace
+                    print_btinfo(io, lkup)
+                    break
+                end
+            end
         end
     end
-end
-
-function show_backtrace1(io, bt)
-    for t in bt
-        lkup = ccall(:jl_lookup_code_address, Any, (Ptr{Void}, Int32), t, 0)
-        if btvalid(lkup) && !btfrom_c(lkup)
-            funcname = lkup[1]
-            if funcname != :backtrace
-                print_btinfo(io, lkup)
+else
+    function print_btinfo(io, frm)
+        print(io, "in ", frm.func, " at ", frm.file, ":", frm.line)
+    end
+    function show_backtrace1(io, bt)
+        st = stacktrace(bt)
+        for frm in st
+            funcname = frm.func
+            if funcname != :backtrace && funcname != Symbol("macro expansion")
+                print_btinfo(io, frm)
                 break
             end
         end
