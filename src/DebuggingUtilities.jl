@@ -58,7 +58,25 @@ else
     end
 end
 
-const showlnio = Ref{IO}(STDOUT)
+type FlushedIO <: IO
+    io
+end
+
+if VERSION < v"0.5.0-dev"
+    function Base.println(io::FlushedIO, args...)
+        println(io.io, args...)
+        isa(io.io, Base.TTY) && flush(io.io)
+    end
+else
+    function Base.println(io::FlushedIO, args...)
+        println(io.io, args...)
+        flush(io.io)
+    end
+end
+Base.getindex(io::FlushedIO) = io.io
+Base.setindex!(io::FlushedIO, newio) = io.io = newio
+
+const showlnio = FlushedIO(STDOUT)
 
 """
 `@showln x` prints "x = val", where `val` is the value of `x`, along
@@ -143,11 +161,13 @@ function test_showline(filename)
     while idx < length(str)
         ex, idx = parse(str, idx)
         try
-            println(showlnio[], idx, ": ", ex)
+            println(showlnio, idx, ": ", ex)
+        catch
+            println(showlnio, "failed to print line starting at file-offset ", idx)
         end
         eval(Main,ex)
     end
-    println(showlnio[], "done")
+    println(showlnio, "done")
 end
 
 """
