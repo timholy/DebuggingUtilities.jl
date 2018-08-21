@@ -1,5 +1,5 @@
 using DebuggingUtilities
-using Base.Test
+using Test
 
 function foo()
     x = 5
@@ -21,7 +21,7 @@ DebuggingUtilities.showlnio[] = io
 
 @test foo() == 7
 
-str = chomp(takebuf_string(io))
+str = chomp(String(take!(io)))
 target = ("x = 5", "(in foo at", "x = 7", "(in foo at")
 for (i,ln) in enumerate(split(str, '\n'))
     ln = lstrip(ln)
@@ -31,7 +31,7 @@ end
 io = IOBuffer()
 DebuggingUtilities.showlnio[] = io
 @test foofl() == 7
-str = chomp(takebuf_string(io))
+str = chomp(String(take!(io)))
 target = ("x = 5", "(at file ", "x = 7", "(at file ")
 for (i,ln) in enumerate(split(str, '\n'))
     ln = lstrip(ln)
@@ -45,5 +45,5 @@ test_showline("noerror.jl")
 @test_throws DomainError test_showline("error.jl")
 time_showline("noerror.jl")
 
-DebuggingUtilities.showlnio[] = STDOUT
+DebuggingUtilities.showlnio[] = stdout
 nothing
