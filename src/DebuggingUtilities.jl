@@ -1,8 +1,4 @@
-__precompile__()
-
 module DebuggingUtilities
-
-using Compat
 
 export @showln, @showfl, test_showline, time_showline
 
@@ -58,7 +54,7 @@ else
     end
 end
 
-type FlushedIO <: IO
+mutable struct FlushedIO <: IO
     io
 end
 
@@ -76,7 +72,7 @@ end
 Base.getindex(io::FlushedIO) = io.io
 Base.setindex!(io::FlushedIO, newio) = io.io = newio
 
-const showlnio = FlushedIO(STDOUT)
+const showlnio = FlushedIO(stdout)
 
 """
 `@showln x` prints "x = val", where `val` is the value of `x`, along
@@ -155,17 +151,17 @@ each expression it executes. This can be useful for debugging errors,
 especially those that cause a segfault.
 """
 function test_showline(filename)
-    str = @compat readstring(filename)
-    eval(Main, parse("using Base.Test"))
+    str = read(filename, String)
+    Core.eval(Main, Meta.parse("using Test"))
     idx = 1
     while idx < length(str)
-        ex, idx = parse(str, idx)
+        ex, idx = Meta.parse(str, idx)
         try
             println(showlnio, idx, ": ", ex)
         catch
             println(showlnio, "failed to print line starting at file-offset ", idx)
         end
-        eval(Main,ex)
+        Core.eval(Main,ex)
     end
     println(showlnio, "done")
 end
@@ -181,15 +177,15 @@ This is less useful now that julia has package precompilation, but can
 still be handy on occasion.
 """
 function time_showline(filename)
-    str = @compat readstring(filename)
+    str = read(filename, String)
     idx = 1
-    exprs = Array(Any, 0)
-    t = Array(Float64, 0)
-    pos = Array(Int, 0)
+    exprs = Any[]
+    t = Float64[]
+    pos = Int[]
     while idx < length(str)
-        ex, idx = parse(str, idx)
+        ex, idx = Meta.parse(str, idx)
         push!(exprs, ex)
-        push!(t, (tic(); eval(Main,ex); toq()))
+        push!(t, @elapsed Core.eval(Main,ex))
         push!(pos, idx)
     end
     perm = sortperm(t)
@@ -202,7 +198,7 @@ function time_showline(filename)
 end
 
 function __init__()
-    showlnio[] = STDOUT
+    showlnio[] = stdout
 end
 
 end # module
