@@ -17,39 +17,16 @@ DebuggingUtilities
 
 # look up an instruction pointer
 
-if VERSION < v"0.5.0-dev"
-    btvalid(lkup) = !isempty(lkup)
-    lookup(ip) = ccall(:jl_lookup_code_address, Any, (Ptr{Void}, Int32), ip, 0)
-    btfrom_c(lkup) = lkup[length(lkup)-1]
-    funcname(lkup) = lkup[1]
-    function print_btinfo(io, lkup)
-        funcname, file, line = lkup
-        print(io, "in ", funcname, " at ", file, ", line ", line)
-    end
-    function show_backtrace1(io, bt)
-        for t in bt
-            lkup = lookup(t)
-            if btvalid(lkup) && !btfrom_c(lkup)
-                funname = funcname(lkup)
-                if funname != :backtrace
-                    print_btinfo(io, lkup)
-                    break
-                end
-            end
-        end
-    end
-else
-    function print_btinfo(io, frm)
-        print(io, "in ", frm.func, " at ", frm.file, ":", frm.line)
-    end
-    function show_backtrace1(io, bt)
-        st = stacktrace(bt)
-        for frm in st
-            funcname = frm.func
-            if funcname != :backtrace && funcname != Symbol("macro expansion")
-                print_btinfo(io, frm)
-                break
-            end
+function print_btinfo(io, frm)
+    print(io, "in ", frm.func, " at ", frm.file, ":", frm.line)
+end
+function show_backtrace1(io, bt)
+    st = stacktrace(bt)
+    for frm in st
+        funcname = frm.func
+        if funcname != :backtrace && funcname != Symbol("macro expansion")
+            print_btinfo(io, frm)
+            break
         end
     end
 end
@@ -58,16 +35,9 @@ mutable struct FlushedIO <: IO
     io
 end
 
-if VERSION < v"0.5.0-dev"
-    function Base.println(io::FlushedIO, args...)
-        println(io.io, args...)
-        isa(io.io, Base.TTY) && flush(io.io)
-    end
-else
-    function Base.println(io::FlushedIO, args...)
-        println(io.io, args...)
-        flush(io.io)
-    end
+function Base.println(io::FlushedIO, args...)
+    println(io.io, args...)
+    flush(io.io)
 end
 Base.getindex(io::FlushedIO) = io.io
 Base.setindex!(io::FlushedIO, newio) = io.io = newio
