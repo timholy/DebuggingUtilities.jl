@@ -1,0 +1,15 @@
+name = "DebuggingUtilities"
+uuid = "5a34b05b-6094-51df-87c5-5e0368a91250"
+authors = ["Tim Holy"]
+version = "0.1.0"
+
+[deps]
+
+[compat]
+julia = "0.7, 1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
