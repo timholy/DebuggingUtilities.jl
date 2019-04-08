@@ -9,8 +9,11 @@ This package contains simple utilities that may help debug julia code.
 Install with
 
 ```jl
-Pkg.clone("https://github.com/timholy/DebuggingUtilities.jl.git")
+pkg> dev https://github.com/timholy/DebuggingUtilities.jl.git
 ```
+
+When you use it in packages, you should `activate` the project and add
+DebuggingUtilities as a dependency use `project> dev DebuggingUtilities`.
 
 # Usage
 
@@ -38,7 +41,6 @@ might, when called (`foo()`), produce output like
             x = 7
             (in foo at ./error.jl:26 at /tmp/showln_test.jl:7)
 ```
-Line numbers are not typically accurate on julia-0.4, but they are with julia-0.5.
 
 ## test_showline
 
