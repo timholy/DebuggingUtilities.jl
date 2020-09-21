@@ -8,7 +8,7 @@ This package contains simple utilities that may help debug julia code.
 
 Install with
 
-```jl
+```julia
 pkg> dev https://github.com/timholy/DebuggingUtilities.jl.git
 ```
 
@@ -23,7 +23,7 @@ DebuggingUtilities as a dependency use `project> dev DebuggingUtilities`.
 statement was executed. This can be useful when variables change value
 in the course of a single function. For example:
 
-```jl
+```julia
 using DebuggingUtilities
 
 function foo()
@@ -34,13 +34,61 @@ function foo()
     nothing
 end
 ```
+
 might, when called (`foo()`), produce output like
+
 ```
-            x = 5
-            (in foo at ./error.jl:26 at /tmp/showln_test.jl:5)
-            x = 7
-            (in foo at ./error.jl:26 at /tmp/showln_test.jl:7)
+x = 5
+(in /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:5)
+x = 7
+(in /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:7)
+7
 ```
+
+## @showlnt
+
+`@showlnt` is for recursion, and uses indentation to show nesting depth.
+For example,
+
+```julia
+function recurses(n)
+    @showlnt n
+    n += 1
+    @showlnt n
+    if n < 10
+        n = recurses(n+1)
+    end
+    return n
+end
+```
+
+might, when called as `recurses(1)`, generate
+
+```
+                                 n = 1
+                                 (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:10)
+                                 n = 2
+                                 (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:12)
+                                  n = 3
+                                  (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:10)
+                                  n = 4
+                                  (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:12)
+                                   n = 5
+                                   (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:10)
+                                   n = 6
+                                   (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:12)
+                                    n = 7
+                                    (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:10)
+                                    n = 8
+                                    (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:12)
+                                     n = 9
+                                     (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:10)
+                                     n = 10
+                                     (in recurses at /home/tim/.julia/dev/DebuggingUtilities/test/funcdefs.jl:12)
+```
+
+Each additional space indicates one additional layer in the call chain.
+Most of the initial space (even for `n=1`) is due to Julia's own REPL.
 
 ## test_showline
 

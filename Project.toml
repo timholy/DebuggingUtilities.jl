@@ -1,7 +1,7 @@
 name = "DebuggingUtilities"
 uuid = "5a34b05b-6094-51df-87c5-5e0368a91250"
 authors = ["Tim Holy"]
-version = "0.1.0"
+version = "1.0.0"
 
 [deps]
 
