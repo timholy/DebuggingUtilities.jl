@@ -1,35 +1,19 @@
 module DebuggingUtilities
 
-export @showln, @showfl, test_showline, time_showline
+export @showln, @showlnt, test_showline, time_showline
 
 """
 DebuggingUtilities contains a few tools that may help debug julia code. The
 exported tools are:
 
-- `@showln`: a macro for displaying variables and corresponding function, file, and line number information
-- `@showfl`: a crude, but faster, version of `@showln`
+- `@showln`: like `@show`, but displays file and line number information as well
+- `@showlnt`: like `@showlnt`, but also uses indentation to display recursion depth
 - `test_showline`: a function that displays progress as it executes a file
 - `time_showline`: a function that displays execution time for each expression in a file
 """
 DebuggingUtilities
 
-## @showln
-
-# look up an instruction pointer
-
-function print_btinfo(io, frm)
-    print(io, "in ", frm.func, " at ", frm.file, ":", frm.line)
-end
-function show_backtrace1(io, bt)
-    st = stacktrace(bt)
-    for frm in st
-        funcname = frm.func
-        if funcname != :backtrace && funcname != Symbol("macro expansion")
-            print_btinfo(io, frm)
-            break
-        end
-    end
-end
+## @showln and @showlnt
 
 mutable struct FlushedIO <: IO
     io
@@ -49,13 +33,55 @@ const showlnio = FlushedIO(stdout)
 with information about the function, file, and line number at which
 this statement was executed. For example:
 
-    function foo()
-        x = 5
-        @showln x
-        x = 7
-        @showln x
-        nothing
+```julia
+function foo()
+    x = 5
+    @showln x
+    x = 7
+    @showln x
+    nothing
+end
+```
+
+might produce output like
+
+    x = 5
+    (in foo at ./error.jl:26 at /tmp/showln_test.jl:52)
+    x = 7
+    (in foo at ./error.jl:26 at /tmp/showln_test.jl:54)
+
+If you need call depth information, see [`@showlnt`](@ref).
+"""
+macro showln(exs...)
+    blk = showexprs(exs)
+    blk = quote
+        local indent = 0
+        $blk
+        println(showlnio[], "(in ", $(string(__source__.file)), ':', $(__source__.line), ')')
     end
+    if !isempty(exs)
+        push!(blk.args, :value)
+    end
+    blk
+end
+
+"""
+`@showlnt x` prints "x = val", where `val` is the value of `x`, along
+with information about the function, file, and line number at which
+this statement was executed, using indentation to indicate recursion depth.
+For example:
+
+```julia
+function recurses(n)
+    @showlnt n
+    n += 1
+    @showlnt n
+    if n < 10
+        n = recurses(n)
+    end
+    return n
+end
+```
 
 might produce output like
 
@@ -66,14 +92,12 @@ might produce output like
 
 This macro causes a backtrace to be taken, and looking up the
 corresponding code information is relatively expensive, so using
-`@showln` can have a substantial performance cost.
+`@showlnt` can have a substantial performance cost.
 
 The indentation of the line is proportional to the length of the
 backtrace, and consequently is an indication of recursion depth.
-
-Line numbers are not typically correct on julia-0.4.
 """
-macro showln(exs...)
+macro showlnt(exs...)
     blk = showexprs(exs)
     blk = quote
         local bt = backtrace()
@@ -97,21 +121,20 @@ function showexprs(exs)
     blk
 end
 
-"""
-`@showfl(@__FILE__, @__LINE__, expressions...)` is similar to
-`@showln`, but has much less overhead (and is uglier to use).
-"""
-macro showfl(fl, ln, exs...)
-    blk = showexprs(exs)
-    blk = quote
-        local indent = 0
-        $blk
-        println(showlnio[], "(at file ", $fl, ", line ", $ln, ')')
+# backtrace utilities
+
+function print_btinfo(io, frm)
+    print(io, "in ", frm.func, " at ", frm.file, ":", frm.line)
+end
+function show_backtrace1(io, bt)
+    st = stacktrace(bt)
+    for frm in st
+        funcname = frm.func
+        if funcname != :backtrace && funcname != Symbol("macro expansion")
+            print_btinfo(io, frm)
+            break
+        end
     end
-    if !isempty(exs)
-        push!(blk.args, :value)
-    end
-    blk
 end
 
 """
